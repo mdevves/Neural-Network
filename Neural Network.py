@@ -70,6 +70,34 @@ test_predictions = model(X_test)
 test_loss = criterion(test_predictions, y_test)
 print(f"Test Loss: {test_loss.item():.4f}")
 
+mse = test_loss.item()
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test.detach().numpy(), test_predictions.detach().numpy())
+
+# Display results
+print(f"Test Loss (MSE): {mse:.4f}")
+print(f"Root Mean Squared Error (RMSE): {rmse:.4f}")
+print(f"R² Score: {r2:.4f}")
+
+
+# Μετατροπή των δεδομένων σε NumPy arrays για plotting
+y_true = y_test.detach().numpy()
+y_pred = test_predictions.detach().numpy()
+
+# Δημιουργία scatter plot
+plt.figure(figsize=(8, 6))
+plt.scatter(y_true, y_pred, alpha=0.5, label="Predictions vs Actual")
+plt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 'r--', lw=2, label="Ideal Fit (y = x)")
+
+# Προσθήκη labels και τίτλου
+plt.xlabel("Actual Values")
+plt.ylabel("Predicted Values")
+plt.title("Comparison of Actual and Predicted Values")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
 # Example: Make a prediction on new data
 X_sample = torch.tensor([[16.0, 7.0, 0.6, 6.0, 33.0]], dtype=torch.float32)
 predictions = model(X_sample)
