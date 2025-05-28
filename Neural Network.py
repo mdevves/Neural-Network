@@ -83,6 +83,51 @@ print(f"Root Mean Squared Error (RMSE): {rmse:.4f}")
 print(f"R² Score: {r2:.4f}")
 
 
+# SHAP ανά έξοδο (1–8)
+model.eval()
+background = X_train[:50].numpy()
+test_samples = X_test[:100].numpy()
+feature_names = df.columns[:5]
+
+for output_index in range(8):
+    print(f"\n➡ Υπολογισμός SHAP για έξοδο {output_index + 1}")
+
+    # Προβλεπτική συνάρτηση για συγκεκριμένη έξοδο
+    def predict_output_i(x_numpy, idx=output_index):
+        x_tensor = torch.tensor(x_numpy, dtype=torch.float32)
+        with torch.no_grad():
+            return model(x_tensor).detach().numpy()[:, idx:idx+1]
+
+    # KernelExplainer για αυτή την έξοδο
+    explainer = shap.KernelExplainer(predict_output_i, background)
+
+    # SHAP values για τα test samples
+    shap_values = explainer.shap_values(test_samples)
+
+    # Έλεγχος και plot
+    values = np.array(shap_values).squeeze()
+    if values.ndim != 2 or values.shape[1] != test_samples.shape[1]:
+        print(f"❌ Παράλειψη Output {output_index+1} λόγω λάθους shape: {values.shape}")
+        continue
+    if np.isnan(values).any():
+        print(f"❌ Παράλειψη Output {output_index+1} λόγω NaN")
+        continue
+
+    print(f"✅ SHAP Summary Plot για Output {output_index + 1}")
+    shap.summary_plot(values, test_samples, feature_names=feature_names)
+
+
+
+ # Υπολογισμός μέσου όρου και τυπικής απόκλισης ανά χαρακτηριστικό
+    means = values.mean(axis=0)
+    stds = values.std(axis=0)
+
+    print("Feature\t\tMean SHAP\tStd SHAP")
+    print("-" * 40)
+    for i, fname in enumerate(feature_names):
+        print(f"{fname:<10s}\t{means[i]: .4f}\t\t{stds[i]: .4f}")
+
+
 # Μετατροπή των δεδομένων σε NumPy arrays για plotting
 y_true = y_test.detach().numpy()
 y_pred = test_predictions.detach().numpy()
